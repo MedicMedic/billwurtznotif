@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+# expo
+.expo/
+dist/
+web-build/
+# native
+android/app/build/
+android/build/
+android/.gradle/
+ios/build/
+# secrets & local config
+.env*
+local.properties
+*.jks
+*.keystore
+!android/app/debug.keystore
+# misc
+*.log
+.DS_Store
+
+# local Claude config
+.claude/

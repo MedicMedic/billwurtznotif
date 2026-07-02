@@ -1,0 +1,30 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- tilt the whole umbrella ~22° around its center -->
+    <group
+        android:name="umbrella"
+        android:pivotX="54"
+        android:pivotY="54"
+        android:rotation="22">
+        <!-- ferrule (tip on top of the canopy) -->
+        <path
+            android:strokeColor="#39FF14"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"
+            android:pathData="M54,24 L54,20" />
+        <!-- canopy: domed top with a scalloped bottom edge -->
+        <path
+            android:fillColor="#39FF14"
+            android:pathData="M24,54 A30,30 0 0 1 84,54 Q79,60 74,54 Q69,60 64,54 Q59,60 54,54 Q49,60 44,54 Q39,60 34,54 Q29,60 24,54 Z" />
+        <!-- pole + J-hook handle -->
+        <path
+            android:strokeColor="#39FF14"
+            android:strokeWidth="3.5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M54,53 L54,76 Q54,82.5 47.5,82.5 Q41,82.5 41,77" />
+    </group>
+</vector>

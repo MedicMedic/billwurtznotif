@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "billwurtz notifier",
+    "slug": "billwurtznotif",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.billwurtznotif",
+      "infoPlist": {
+        "UIBackgroundModes": ["fetch", "remote-notification"]
+      }
+    },
+    "android": {
+      "package": "com.billwurtznotif",
+      "adaptiveIcon": {
+        "backgroundColor": "#1a1a1a"
+      }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        { "color": "#1a1a1a" }
+      ]
+    ]
+  }
+}
