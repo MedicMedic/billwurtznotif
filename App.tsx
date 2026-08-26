@@ -30,7 +30,13 @@ function AppContent() {
       <StatusBar style="light" />
       <View style={styles.root}>
         <View style={styles.screen}>
-          {tab === 'feed' ? <FeedScreen /> : <WatchedScreen />}
+          {/* Both screens stay mounted so switching tabs doesn't reset scroll position */}
+          <View style={tab === 'feed' ? styles.screen : styles.hidden}>
+            <FeedScreen />
+          </View>
+          <View style={tab === 'watched' ? styles.screen : styles.hidden}>
+            <WatchedScreen />
+          </View>
         </View>
 
         {/* Pad the tab bar by the system nav-bar inset so the buttons sit above it */}
@@ -76,6 +82,7 @@ const styles = StyleSheet.create({
   },
   root: { flex: 1 },
   screen: { flex: 1, backgroundColor: '#323232' },
+  hidden: { display: 'none' },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: '#232323',

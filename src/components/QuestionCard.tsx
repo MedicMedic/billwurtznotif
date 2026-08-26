@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { QAEntry } from '../types';
+import RichText from './RichText';
+import { localTimeSuffix } from '../utils/billTime';
 
 function timeAgo(ts?: number): string {
   if (!ts) return '';
@@ -14,6 +16,7 @@ function timeAgo(ts?: number): string {
 }
 
 export default function QuestionCard({ entry, isMine }: { entry: QAEntry; isMine?: boolean }) {
+  const localSuffix = localTimeSuffix(entry.date);
   return (
     <View style={[styles.card, isMine && styles.cardMine]}>
       {(!!entry.date || !!entry.detectedAt || isMine) && (
@@ -25,6 +28,7 @@ export default function QuestionCard({ entry, isMine }: { entry: QAEntry; isMine
           ) : <View />}
           <Text style={styles.time}>
             {entry.date || ''}
+            {!!localSuffix && `  ${localSuffix}`}
             {!!entry.detectedAt && (entry.date ? '  ·  ' : '') + `new ${timeAgo(entry.detectedAt)}`}
           </Text>
         </View>
@@ -33,14 +37,24 @@ export default function QuestionCard({ entry, isMine }: { entry: QAEntry; isMine
         <View style={[styles.pill, styles.qPill]}>
           <Text style={styles.pillText}>Q</Text>
         </View>
-        <Text style={styles.questionText}>{entry.question || '(question)'}</Text>
+        <RichText
+          text={entry.question}
+          style={styles.questionText}
+          linkStyle={styles.link}
+          emptyText="(no question text)"
+        />
       </View>
       <View style={styles.divider} />
       <View style={styles.row}>
         <View style={[styles.pill, styles.aPill]}>
           <Text style={styles.pillText}>A</Text>
         </View>
-        <Text style={styles.answerText}>{entry.answer || '(answer)'}</Text>
+        <RichText
+          text={entry.answer}
+          style={styles.answerText}
+          linkStyle={styles.link}
+          emptyText="not answered yet"
+        />
       </View>
     </View>
   );
@@ -79,5 +93,6 @@ const styles = StyleSheet.create({
   pillText: { color: '#000', fontSize: 12, fontWeight: '800' },
   questionText: { flex: 1, fontSize: 15, color: '#B387FF', fontWeight: '500', lineHeight: 22 },
   answerText: { flex: 1, fontSize: 15, color: '#fff', lineHeight: 22 },
+  link: { color: '#00EE3B', textDecorationLine: 'underline' },
   divider: { height: 1, backgroundColor: '#555', marginVertical: 10 },
 });

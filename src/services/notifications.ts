@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { QAEntry } from '../types';
+import { plainText } from '../utils/linkText';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -37,9 +38,10 @@ export async function notifyNewQuestions(count: number): Promise<void> {
 }
 
 export async function notifyQuestionMatched(watchedText: string, entry: QAEntry): Promise<void> {
-  const preview = entry.answer.length > 120
-    ? entry.answer.slice(0, 120) + '...'
-    : entry.answer;
+  const answerText = plainText(entry.answer);
+  const preview = answerText.length > 120
+    ? answerText.slice(0, 120) + '...'
+    : answerText;
   await Notifications.scheduleNotificationAsync({
     content: {
       title: 'bill answered your question!',

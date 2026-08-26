@@ -6,6 +6,7 @@ import {
 import { WatchedQuestion } from '../types';
 import { getWatched, saveWatched } from '../services/storage';
 import { askQuestion } from '../services/scraper';
+import RichText from '../components/RichText';
 
 export default function WatchedScreen() {
   const [watched, setWatched] = useState<WatchedQuestion[]>([]);
@@ -154,7 +155,7 @@ export default function WatchedScreen() {
           renderItem={({ item }) => (
             <View style={[styles.card, item.matched && styles.cardMatched]}>
               <View style={styles.cardHeader}>
-                <Text style={styles.cardText} numberOfLines={3}>{item.text}</Text>
+                <Text style={styles.cardText}>{item.text}</Text>
                 {item.matched && (
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>ANSWERED</Text>
@@ -165,10 +166,20 @@ export default function WatchedScreen() {
               {item.matched && item.matchedEntry && (
                 <View style={styles.matchBox}>
                   <Text style={styles.matchQ} numberOfLines={2}>
-                    Q: {item.matchedEntry.question}
+                    Q: <RichText
+                      text={item.matchedEntry.question}
+                      style={styles.matchQ}
+                      linkStyle={styles.matchLink}
+                      emptyText="(no question text)"
+                    />
                   </Text>
                   <Text style={styles.matchA} numberOfLines={4}>
-                    A: {item.matchedEntry.answer}
+                    A: <RichText
+                      text={item.matchedEntry.answer}
+                      style={styles.matchA}
+                      linkStyle={styles.matchLink}
+                      emptyText="not answered yet"
+                    />
                   </Text>
                 </View>
               )}
@@ -240,6 +251,7 @@ const styles = StyleSheet.create({
   },
   matchQ: { fontSize: 13, color: '#B387FF', marginBottom: 4, fontStyle: 'italic' },
   matchA: { fontSize: 13, color: '#fff', lineHeight: 19 },
+  matchLink: { color: '#00EE3B', textDecorationLine: 'underline' },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
   resetBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, borderWidth: 1, borderColor: '#00EE3B' },
   resetText: { color: '#00FF00', fontSize: 12, fontWeight: '600' },
