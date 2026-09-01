@@ -25,6 +25,7 @@ export default function FeedScreen() {
   const [watched, setWatched] = useState<WatchedQuestion[]>([]);
   const [lastCheck, setLastCheckTs] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checkResult, setCheckResult] = useState<string | null>(null);
@@ -62,6 +63,15 @@ export default function FeedScreen() {
       setError(err?.message || 'check failed');
     } finally {
       setChecking(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await checkNow();
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -107,7 +117,7 @@ export default function FeedScreen() {
               isMine={watched.some(wq => matchesEntry(wq, item))}
             />
           )}
-          refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           contentContainerStyle={styles.list}
         />
       )}

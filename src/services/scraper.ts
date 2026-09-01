@@ -1,4 +1,6 @@
+import { decode as decodeEntities } from 'he';
 import { QAEntry } from '../types';
+import { STYLE_OPEN, STYLE_PROPS_END, STYLE_CLOSE } from '../utils/linkText';
 
 const PAGE_URL = 'https://billwurtz.com/questions/questions.html';
 const ASK_URL = 'https://billwurtz.com/questions/questions.php';
@@ -31,40 +33,6 @@ function simpleHash(str: string): string {
   return Math.abs(hash).toString(36).padStart(8, '0').slice(0, 8);
 }
 
-// Named entities beyond the basic markup ones (&amp; &lt; &gt; &quot; &#39;
-// are handled generically below as numeric/named lookups). billwurtz.com
-// escapes non-ASCII output, so accented letters and punctuation come back
-// as either numeric refs (&#233;) or these named ones.
-const NAMED_ENTITIES: Record<string, string> = {
-  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ',
-  eacute: 'é', egrave: 'è', ecirc: 'ê', euml: 'ë',
-  aacute: 'á', agrave: 'à', acirc: 'â', auml: 'ä', atilde: 'ã', aring: 'å',
-  iacute: 'í', igrave: 'ì', icirc: 'î', iuml: 'ï',
-  oacute: 'ó', ograve: 'ò', ocirc: 'ô', ouml: 'ö', otilde: 'õ',
-  uacute: 'ú', ugrave: 'ù', ucirc: 'û', uuml: 'ü',
-  ntilde: 'ñ', ccedil: 'ç', yacute: 'ý', yuml: 'ÿ',
-  Eacute: 'É', Egrave: 'È', Aacute: 'Á', Agrave: 'À', Ntilde: 'Ñ', Ccedil: 'Ç',
-  Uuml: 'Ü', Ouml: 'Ö', Auml: 'Ä', Iacute: 'Í', Oacute: 'Ó', Uacute: 'Ú',
-  szlig: 'ß', oslash: 'ø', Oslash: 'Ø', aelig: 'æ', AElig: 'Æ',
-  hellip: '…', mdash: '—', ndash: '–',
-  lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”',
-};
-
-function decodeEntities(s: string): string {
-  return s
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => codePointToChar(parseInt(hex, 16)))
-    .replace(/&#(\d+);/g, (_, dec) => codePointToChar(parseInt(dec, 10)))
-    .replace(/&([a-zA-Z]+);/g, (m, name) => NAMED_ENTITIES[name] ?? m);
-}
-
-function codePointToChar(code: number): string {
-  try {
-    return String.fromCodePoint(code);
-  } catch {
-    return '';
-  }
-}
-
 const BASE_URL = 'https://billwurtz.com/questions/';
 
 function resolveUrl(href: string): string {
@@ -73,22 +41,99 @@ function resolveUrl(href: string): string {
   return BASE_URL + href;
 }
 
-// Turn <a href="...">text</a> into markdown-style [text](url) *before* tags
-// are stripped, so the link survives into the app instead of collapsing to
-// plain, unclickable text.
-function extractLinks(s: string): string {
-  return s.replace(
-    /<a\s+href=["']([^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi,
-    (_, href, label) => `[${label.replace(/<[^>]+>/g, '').trim()}](${resolveUrl(decodeEntities(href))})`
-  );
+// Tags that separate words when stripped (line breaks, block boundaries).
+const BLOCK_TAGS = new Set(['br', 'p', 'div', 'li', 'tr']);
+// Tags that carry inline styling worth keeping (bold/italic/underline/color/size).
+const STYLE_TAGS = new Set(['b', 'strong', 'i', 'em', 'u', 'font', 'span']);
+
+function normalizeColor(c: string): string {
+  return /^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$/.test(c) ? '#' + c : c;
+}
+
+// Reads the style-relevant attributes off one opening tag (color/font-weight/
+// font-style/text-decoration/font-size, whether given directly or via a
+// `style="..."` attribute) and returns them as short encoded prop strings
+// ("b", "i", "u", "c#rrggbb", "s<em multiplier>") for richify() to emit.
+function styleProps(tag: string, attrs: string): string[] {
+  const props: string[] = [];
+  if (tag === 'b' || tag === 'strong') props.push('b');
+  if (tag === 'i' || tag === 'em') props.push('i');
+  if (tag === 'u') props.push('u');
+  const colorAttr = /\bcolor\s*=\s*["']?(#?[0-9a-fA-F]{3,6}|[a-zA-Z]+)["']?/i.exec(attrs);
+  if (colorAttr) props.push('c' + normalizeColor(colorAttr[1]));
+  const styleAttr = /\bstyle\s*=\s*["']([^"']*)["']/i.exec(attrs);
+  if (styleAttr) {
+    const style = styleAttr[1];
+    const color = /color\s*:\s*([^;]+)/i.exec(style);
+    if (color) props.push('c' + normalizeColor(color[1].trim()));
+    const em = /font-size\s*:\s*([\d.]+)\s*em/i.exec(style);
+    if (em) props.push('s' + em[1]);
+    if (/font-weight\s*:\s*(bold|[6-9]00)/i.test(style)) props.push('b');
+    if (/font-style\s*:\s*italic/i.test(style)) props.push('i');
+    if (/text-decoration\s*:\s*underline/i.test(style)) props.push('u');
+  }
+  return props;
+}
+
+// Converts a raw HTML fragment into plain text with two kinds of embedded
+// markup, both designed to survive JSON storage and matching.normalize()
+// untouched (or collapse harmlessly) when styling isn't needed:
+//  - links: [label](url), same markdown-style convention as before.
+//  - inline styles: STYLE_OPEN + props + STYLE_PROPS_END ... STYLE_CLOSE,
+//    delimited with Private Use Area code points so they can never collide
+//    with real page text. RichText renders these; everything else (like
+//    matching.normalize, which strips non-alphanumerics) just ignores them.
+// <a> tags are captured non-recursively (mirrors the old extractLinks
+// behavior); style tags use a stack so nesting - e.g. the bold+2em wrapper
+// around a solo green "q" in "ue<font color=green>q</font>stions" - renders
+// correctly instead of collapsing to plain, unstyled text.
+function richify(raw: string): string {
+  let out = '';
+  const stack: number[] = [];
+  const re = /<(\/?)([a-zA-Z][a-zA-Z0-9]*)([^>]*)>|([^<]+)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(raw)) !== null) {
+    if (m[4] !== undefined) {
+      out += decodeEntities(m[4]);
+      continue;
+    }
+    const closing = m[1] === '/';
+    const tag = m[2].toLowerCase();
+    const attrs = m[3] || '';
+
+    if (!closing && tag === 'a') {
+      const rest = raw.slice(re.lastIndex);
+      const closeMatch = /<\/a\s*>/i.exec(rest);
+      const label = closeMatch ? rest.slice(0, closeMatch.index) : rest;
+      re.lastIndex += closeMatch ? closeMatch.index + closeMatch[0].length : rest.length;
+      const hrefMatch = /href\s*=\s*["']([^"']*)["']/i.exec(attrs);
+      const cleanLabel = decodeEntities(label.replace(/<[^>]+>/g, '')).trim();
+      out += hrefMatch ? `[${cleanLabel}](${resolveUrl(decodeEntities(hrefMatch[1]))})` : cleanLabel;
+      continue;
+    }
+
+    if (BLOCK_TAGS.has(tag)) {
+      out += ' ';
+      continue;
+    }
+
+    if (STYLE_TAGS.has(tag)) {
+      if (!closing) {
+        const props = styleProps(tag, attrs);
+        props.forEach(p => { out += STYLE_OPEN + p + STYLE_PROPS_END; });
+        stack.push(props.length);
+      } else {
+        const n = stack.pop() ?? 0;
+        for (let k = 0; k < n; k++) out += STYLE_CLOSE;
+      }
+    }
+    // any other tag (h3, dco, qco, stray markup) is dropped without affecting the stack
+  }
+  return out;
 }
 
 function clean(s: string): string {
-  return decodeEntities(
-    extractLinks(s).replace(/<[^>]+>/g, ' ')
-  )
-    .replace(/\s+/g, ' ')
-    .trim();
+  return richify(s).replace(/\s+/g, ' ').trim();
 }
 
 export async function fetchQuestions(): Promise<QAEntry[]> {

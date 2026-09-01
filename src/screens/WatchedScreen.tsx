@@ -4,8 +4,9 @@ import {
   Alert, KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native';
 import { WatchedQuestion } from '../types';
-import { getWatched, saveWatched } from '../services/storage';
+import { getWatched, saveWatched, getAllEntries } from '../services/storage';
 import { askQuestion } from '../services/scraper';
+import { matchesEntry } from '../services/matching';
 import RichText from '../components/RichText';
 
 export default function WatchedScreen() {
@@ -23,18 +24,32 @@ export default function WatchedScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  const buildItem = (text: string): WatchedQuestion => ({
-    id: Date.now().toString(),
-    text,
-    // Commas still work as "all keywords must match"; a plain pasted question
-    // is matched as a whole by the matcher, so keywords are just a fallback.
-    keywords: text.split(',').map(k => k.trim()).filter(k => k.length > 1),
-    addedAt: Date.now(),
-    matched: false,
-  });
+  // Random suffix guards against id collisions from rapid taps landing in the same millisecond.
+  const buildItem = async (text: string): Promise<WatchedQuestion> => {
+    const item: WatchedQuestion = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      text,
+      // Commas still work as "all keywords must match"; a plain pasted question
+      // is matched as a whole by the matcher, so keywords are just a fallback.
+      keywords: text.split(',').map(k => k.trim()).filter(k => k.length > 1),
+      addedAt: Date.now(),
+      matched: false,
+    };
+    // "already asked" questions may already be answered on the site — check
+    // what's already stored instead of only waiting for future new entries
+    // (backgroundFetch's matching only ever looks at newly-discovered ones).
+    const entries = await getAllEntries();
+    const match = entries.find(e => matchesEntry(item, e));
+    if (match) {
+      item.matched = true;
+      item.matchedEntry = match;
+    }
+    return item;
+  };
 
   const addToWatched = async (text: string) => {
-    const updated = [buildItem(text), ...watched];
+    const item = await buildItem(text);
+    const updated = [item, ...watched];
     setWatched(updated);
     await saveWatched(updated);
     setInputText('');
