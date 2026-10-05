@@ -23,6 +23,27 @@ export async function askQuestion(text: string): Promise<void> {
   }
 }
 
+const RANDOM_URL = 'https://billwurtz.com/questions/random.php';
+
+// One random entry from the site's "i'm feeling randy" page. The server sends
+// max-age=600, so a throwaway query param keeps each fetch fresh.
+export async function fetchRandom(): Promise<QAEntry> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  try {
+    const resp = await fetch(`${RANDOM_URL}?_=${Date.now()}`, {
+      signal: controller.signal,
+      headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const entry = parseEntries(await resp.text())[0];
+    if (!entry) throw new Error('no question found');
+    return entry;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 function simpleHash(str: string): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -136,20 +157,41 @@ function clean(s: string): string {
   return richify(s).replace(/\s+/g, ' ').trim();
 }
 
-export async function fetchQuestions(): Promise<QAEntry[]> {
+async function fetchPage(url: string): Promise<{ entries: QAEntry[]; prev: string | null }> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
   try {
-    const resp = await fetch(PAGE_URL, {
+    const resp = await fetch(url, {
       signal: controller.signal,
       headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const html = await resp.text();
-    return parseEntries(html);
+    // Each page (current month, then monthly archives) links to the one before it.
+    const prev = /<a\s+href="([^"]+)"[^>]*>\s*PREVIOUS QUESTIONS/i.exec(html);
+    return { entries: parseEntries(html), prev: prev ? prev[1] : null };
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+export async function fetchQuestions(): Promise<QAEntry[]> {
+  return (await fetchPage(PAGE_URL)).entries;
+}
+
+// Walks back through the monthly archives one page at a time. Pass null to
+// start from the current page; `prev` is the cursor for the next call, or
+// null once the oldest archive has been reached.
+export async function fetchArchivePage(
+  cursor: string | null
+): Promise<{ entries: QAEntry[]; prev: string | null }> {
+  if (cursor === null) {
+    const { prev } = await fetchPage(PAGE_URL);
+    if (!prev) return { entries: [], prev: null };
+    cursor = prev;
+  }
+  const page = await fetchPage(resolveUrl(cursor));
+  return page;
 }
 
 // billwurtz.com/questions formats each entry as:

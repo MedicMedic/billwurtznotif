@@ -1,8 +1,10 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { QAEntry } from '../types';
 import RichText from './RichText';
-import { localTimeSuffix } from '../utils/billTime';
+import LinkSheet from './LinkSheet';
+import { useFavorites, toggleFavorite } from '../services/favorites';
+import { localTimeSuffix, questionUrl } from '../utils/billTime';
 
 function timeAgo(ts?: number): string {
   if (!ts) return '';
@@ -15,24 +17,49 @@ function timeAgo(ts?: number): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-export default function QuestionCard({ entry, isMine }: { entry: QAEntry; isMine?: boolean }) {
+export default function QuestionCard({ entry, isMine, bookmarked, onToggleBookmark }: {
+  entry: QAEntry; isMine?: boolean;
+  bookmarked?: boolean; onToggleBookmark?: () => void;
+}) {
   const localSuffix = localTimeSuffix(entry.date);
+  const url = questionUrl(entry.date);
+  const [open, setOpen] = useState(false);
+  const starred = useFavorites().some(f => f.id === entry.id);
+
   return (
-    <View style={[styles.card, isMine && styles.cardMine]}>
-      {(!!entry.date || !!entry.detectedAt || isMine) && (
-        <View style={styles.topRow}>
-          {isMine ? (
+    <>
+    <Pressable
+      onPress={url || onToggleBookmark ? () => setOpen(true) : undefined}
+      style={[styles.card, isMine && styles.cardMine, bookmarked && styles.cardBookmarked]}
+    >
+      <View style={styles.topRow}>
+        <View style={styles.badges}>
+          {isMine && (
             <View style={styles.mineBadge}>
               <Text style={styles.mineBadgeText}>YOUR QUESTION</Text>
             </View>
-          ) : <View />}
+          )}
+          {bookmarked && (
+            <View style={styles.bookmarkBadge}>
+              <Text style={styles.mineBadgeText}>🔖 BOOKMARK</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.topRight}>
           <Text style={styles.time}>
             {entry.date || ''}
             {!!localSuffix && `  ${localSuffix}`}
             {!!entry.detectedAt && (entry.date ? '  ·  ' : '') + `new ${timeAgo(entry.detectedAt)}`}
           </Text>
+          <Pressable
+            onPress={() => toggleFavorite(entry)}
+            hitSlop={10}
+            accessibilityLabel={starred ? 'Unstar' : 'Star'}
+          >
+            <Text style={[styles.star, starred && styles.starOn]}>{starred ? '★' : '☆'}</Text>
+          </Pressable>
         </View>
-      )}
+      </View>
       <View style={styles.row}>
         <View style={[styles.pill, styles.qPill]}>
           <Text style={styles.pillText}>Q</Text>
@@ -56,7 +83,15 @@ export default function QuestionCard({ entry, isMine }: { entry: QAEntry; isMine
           emptyText="not answered yet"
         />
       </View>
-    </View>
+    </Pressable>
+    <LinkSheet
+      url={url}
+      visible={open}
+      onClose={() => setOpen(false)}
+      bookmarked={bookmarked}
+      onToggleBookmark={onToggleBookmark}
+    />
+    </>
   );
 }
 
@@ -70,6 +105,9 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     elevation: 2,
   },
+  cardBookmarked: { borderColor: '#E9EC54', borderWidth: 2 },
+  badges: { flexDirection: 'row', gap: 6, flexShrink: 1 },
+  bookmarkBadge: { backgroundColor: '#E9EC54', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
   cardMine: { borderColor: '#00EE3B', borderWidth: 2 },
   topRow: {
     flexDirection: 'row', justifyContent: 'space-between',
@@ -77,6 +115,9 @@ const styles = StyleSheet.create({
   },
   mineBadge: { backgroundColor: '#00EE3B', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
   mineBadgeText: { color: '#000', fontSize: 10, fontWeight: '800' },
+  topRight: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
+  star: { fontSize: 22, color: '#999' },
+  starOn: { color: '#E9EC54' },
   time: { fontSize: 11, color: '#E9EC54', textAlign: 'right' },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   pill: {

@@ -1,19 +1,22 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet,
-  Alert, KeyboardAvoidingView, Platform, ActivityIndicator,
+  Alert, KeyboardAvoidingView, Platform, ActivityIndicator, Pressable,
 } from 'react-native';
 import { WatchedQuestion } from '../types';
 import { getWatched, saveWatched, getAllEntries } from '../services/storage';
 import { askQuestion } from '../services/scraper';
 import { matchesEntry } from '../services/matching';
 import RichText from '../components/RichText';
+import LinkSheet from '../components/LinkSheet';
+import { questionUrl } from '../utils/billTime';
 
 export default function WatchedScreen() {
   const [watched, setWatched] = useState<WatchedQuestion[]>([]);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [linkUrl, setLinkUrl] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const items = await getWatched();
@@ -179,7 +182,10 @@ export default function WatchedScreen() {
               </View>
 
               {item.matched && item.matchedEntry && (
-                <View style={styles.matchBox}>
+                <Pressable
+                  style={styles.matchBox}
+                  onPress={() => setLinkUrl(questionUrl(item.matchedEntry?.date))}
+                >
                   <Text style={styles.matchQ} numberOfLines={2}>
                     Q: <RichText
                       text={item.matchedEntry.question}
@@ -196,7 +202,7 @@ export default function WatchedScreen() {
                       emptyText="not answered yet"
                     />
                   </Text>
-                </View>
+                </Pressable>
               )}
 
               <View style={styles.actions}>
@@ -213,6 +219,7 @@ export default function WatchedScreen() {
           )}
         />
       )}
+      <LinkSheet url={linkUrl} visible={!!linkUrl} onClose={() => setLinkUrl(null)} />
     </KeyboardAvoidingView>
   );
 }

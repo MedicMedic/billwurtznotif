@@ -6,11 +6,20 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import FeedScreen from './src/screens/FeedScreen';
 import WatchedScreen from './src/screens/WatchedScreen';
+import RandyScreen from './src/screens/RandyScreen';
+import StarredScreen from './src/screens/StarredScreen';
 import { requestPermissions } from './src/services/notifications';
 // Must be imported at module level so TaskManager.defineTask runs before any component mounts
 import { registerBackgroundFetch, runCheck } from './src/tasks/backgroundFetch';
 
-type Tab = 'feed' | 'watched';
+type Tab = 'feed' | 'watched' | 'randy' | 'starred';
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'feed', label: 'new answers' },
+  { key: 'watched', label: 'my questions' },
+  { key: 'randy', label: "i'm feeling randy" },
+  { key: 'starred', label: 'starred' },
+];
 
 function AppContent() {
   const [tab, setTab] = useState<Tab>('feed');
@@ -37,28 +46,28 @@ function AppContent() {
           <View style={tab === 'watched' ? styles.screen : styles.hidden}>
             <WatchedScreen />
           </View>
+          <View style={tab === 'randy' ? styles.screen : styles.hidden}>
+            <RandyScreen />
+          </View>
+          <View style={tab === 'starred' ? styles.screen : styles.hidden}>
+            <StarredScreen />
+          </View>
         </View>
 
         {/* Pad the tab bar by the system nav-bar inset so the buttons sit above it */}
         <View style={[styles.tabBar, { paddingBottom: insets.bottom + 10 }]}>
-          <TouchableOpacity
-            style={[styles.tab, tab === 'feed' && styles.tabActive]}
-            onPress={() => setTab('feed')}
-            accessibilityRole="tab"
-          >
-            <Text style={[styles.tabLabel, tab === 'feed' && styles.tabLabelActive]}>
-              new answers
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, tab === 'watched' && styles.tabActive]}
-            onPress={() => setTab('watched')}
-            accessibilityRole="tab"
-          >
-            <Text style={[styles.tabLabel, tab === 'watched' && styles.tabLabelActive]}>
-              my questions
-            </Text>
-          </TouchableOpacity>
+          {TABS.map(t => (
+            <TouchableOpacity
+              key={t.key}
+              style={[styles.tab, tab === t.key && styles.tabActive]}
+              onPress={() => setTab(t.key)}
+              accessibilityRole="tab"
+            >
+              <Text style={[styles.tabLabel, tab === t.key && styles.tabLabelActive]}>
+                {t.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
     </View>
@@ -95,6 +104,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   tabActive: { backgroundColor: 'rgba(0,255,0,0.12)' },
-  tabLabel: { color: '#888', fontSize: 14, fontWeight: '500' },
+  tabLabel: { color: '#888', fontSize: 11, fontWeight: '500', textAlign: 'center' },
   tabLabelActive: { color: '#00FF00', fontWeight: '700' },
 });

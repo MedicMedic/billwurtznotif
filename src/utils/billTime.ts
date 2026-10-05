@@ -75,3 +75,17 @@ export function localTimeSuffix(dateStr?: string): string {
   }
   return `(${local} your time)`;
 }
+
+// Permalink for one entry. The site addresses each question by its posted
+// wall-clock time as q.php?date=YYYYMMDDHHMM (24h, no timezone conversion).
+export function questionUrl(dateStr?: string): string | null {
+  if (!dateStr) return null;
+  const m = dateStr.match(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})\D+(\d{1,2}):(\d{2})\s*(am|pm)/i);
+  if (!m) return null;
+  const [, mo, day, yr, h, min, ampm] = m;
+  const year = yr.length === 2 ? '20' + yr : yr;
+  let hour = parseInt(h, 10) % 12;
+  if (ampm.toLowerCase() === 'pm') hour += 12;
+  const p2 = (n: string | number) => String(n).padStart(2, '0');
+  return `https://billwurtz.com/questions/q.php?date=${year}${p2(mo)}${p2(day)}${p2(hour)}${min}`;
+}
