@@ -104,15 +104,23 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        // Play Store upload key. Credentials live in ~/.gradle/gradle.properties
+        // (never in the repo); without them release builds fall back to debug signing.
+        release {
+            if (findProperty('BW_UPLOAD_STORE_FILE')) {
+                storeFile file(findProperty('BW_UPLOAD_STORE_FILE'))
+                storePassword findProperty('BW_UPLOAD_STORE_PASSWORD')
+                keyAlias findProperty('BW_UPLOAD_KEY_ALIAS')
+                keyPassword findProperty('BW_UPLOAD_KEY_PASSWORD')
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig findProperty('BW_UPLOAD_STORE_FILE') ? signingConfigs.release : signingConfigs.debug
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds
