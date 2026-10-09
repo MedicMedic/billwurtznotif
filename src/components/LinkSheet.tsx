@@ -27,7 +27,7 @@ export default function LinkSheet({ url, visible, onClose, bookmarked, onToggleB
               onPress={() => { onToggleBookmark(); close(); }}
             >
               <Text style={styles.btnText}>
-                {bookmarked ? 'Remove bookmark' : '🔖 Bookmark this spot'}
+                {bookmarked ? 'Remove bookmark' : 'Bookmark this spot'}
               </Text>
             </Pressable>
           )}

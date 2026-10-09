@@ -159,7 +159,7 @@ export default function FeedScreen() {
             onPress={jumpToBookmark}
             disabled={!bookmarkId}
           >
-            <Text style={styles.jumpText}>🔖 go to bookmark</Text>
+            <Text style={styles.jumpText}>go to bookmark</Text>
           </TouchableOpacity>
         </View>
         {!!checkResult && !error && (

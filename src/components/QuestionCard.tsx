@@ -41,7 +41,7 @@ export default function QuestionCard({ entry, isMine, bookmarked, onToggleBookma
           )}
           {bookmarked && (
             <View style={styles.bookmarkBadge}>
-              <Text style={styles.mineBadgeText}>🔖 BOOKMARK</Text>
+              <Text style={styles.mineBadgeText}>BOOKMARK</Text>
             </View>
           )}
         </View>
