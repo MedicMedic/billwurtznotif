@@ -122,7 +122,7 @@ export default function WatchedScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>my questions</Text>
+        <Text style={styles.title}>my ue<Text style={{ color: '#00FF00' }}>q</Text>stions</Text>
         <Text style={styles.subtitle}>
           ask bill a question through here, or paste one you already asked.
           you'll be notified the moment it's answered.

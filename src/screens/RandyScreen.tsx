@@ -30,7 +30,7 @@ export default function RandyScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>i'm feeling randy</Text>
-        <Text style={styles.subtitle}>random ue<Text style={{ color: '#00FF00' }}>q</Text>stions from the archive. pull down or tap the button for another.</Text>
+        <Text style={styles.subtitle}>random questions from the archive. pull down or tap the button for another.</Text>
       </View>
       <ScrollView
         contentContainerStyle={styles.list}

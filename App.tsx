@@ -16,7 +16,7 @@ type Tab = 'feed' | 'watched' | 'randy' | 'starred';
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'feed', label: 'new answers' },
-  { key: 'watched', label: 'my questions' },
+  { key: 'watched', label: 'my ueqstions' },
   { key: 'randy', label: "i'm feeling randy" },
   { key: 'starred', label: 'starred' },
 ];
@@ -64,7 +64,9 @@ function AppContent() {
               accessibilityRole="tab"
             >
               <Text style={[styles.tabLabel, tab === t.key && styles.tabLabelActive]}>
-                {t.label}
+                {t.key === 'watched'
+                  ? <>my ue<Text style={{ color: '#00FF00' }}>q</Text>stions</>
+                  : t.label}
               </Text>
             </TouchableOpacity>
           ))}
