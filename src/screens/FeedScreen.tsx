@@ -137,7 +137,7 @@ export default function FeedScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>bill wurtz q&a</Text>
+        <Text style={styles.title}>bill wurtz ue<Text style={{ color: '#00FF00' }}>q</Text>stions</Text>
         <View style={styles.headerRow}>
           <Text style={styles.meta}>checked {timeAgo(lastCheck)}</Text>
           <TouchableOpacity

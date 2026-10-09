@@ -9,7 +9,7 @@ export default function StarredScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>starred</Text>
-        <Text style={styles.subtitle}>your favorite q&as. tap the star on any card to add it.</Text>
+        <Text style={styles.subtitle}>your favorite ue<Text style={{ color: '#00FF00' }}>q</Text>stions. tap the star on any card to add it.</Text>
       </View>
       {favorites.length === 0 ? (
         <View style={styles.empty}>

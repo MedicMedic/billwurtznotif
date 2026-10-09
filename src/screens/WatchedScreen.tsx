@@ -63,7 +63,7 @@ export default function WatchedScreen() {
     if (!text) return;
     setNotice(null);
     await addToWatched(text);
-    setNotice('watching — you\'ll get a notification when it\'s answered');
+    setNotice('watching. you\'ll get a notification when it\'s answered');
   };
 
   const askBill = () => {
@@ -84,7 +84,7 @@ export default function WatchedScreen() {
               await addToWatched(text);
               setNotice('sent! now watching for bill\'s answer');
             } catch (err: any) {
-              setNotice(`couldn't send (${err?.message || 'network error'}) — try again`);
+              setNotice(`couldn't send (${err?.message || 'network error'}). try again`);
             } finally {
               setSending(false);
             }
@@ -124,7 +124,7 @@ export default function WatchedScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>my questions</Text>
         <Text style={styles.subtitle}>
-          ask bill a question right from here, or paste one you already asked —
+          ask bill a question through here, or paste one you already asked.
           you'll be notified the moment it's answered.
         </Text>
       </View>
@@ -154,7 +154,7 @@ export default function WatchedScreen() {
             onPress={watchOnly}
             disabled={!inputText.trim() || sending}
           >
-            <Text style={styles.watchBtnText}>already asked — just watch</Text>
+            <Text style={styles.watchBtnText}>already asked, just watch</Text>
           </TouchableOpacity>
         </View>
         {!!notice && <Text style={styles.notice}>{notice}</Text>}
