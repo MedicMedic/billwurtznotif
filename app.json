@@ -4,6 +4,12 @@
     "slug": "billwurtznotif",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon-512.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
@@ -20,7 +26,8 @@
         "android.permission.SYSTEM_ALERT_WINDOW"
       ],
       "adaptiveIcon": {
-        "backgroundColor": "#1a1a1a"
+        "foregroundImage": "./assets/adaptive-foreground.png",
+        "backgroundColor": "#000000"
       }
     },
     "plugins": [
